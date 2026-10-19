@@ -1,0 +1,166 @@
+---
+title: "Typology-And-Mental-Health"
+output: rmarkdown::github_document
+author: "Siena Rivera"
+---
+
+# Myers-Briggs Type Indicator (MBTI), Countries, and Mental Health Disorders
+## Overview
+Throughout the past decade, Myers-Briggs Type Indicator (MBTI) has been notorious for personality assessments and self-discovery. We wanted to look further into this topic, and the connection between MBTI and Mental Health Disorders. MBTI is hypothesized to have types that are more correlated with different disorders. That is what we will look further into. Although they are known as pseudosciences, these forms of self-acknowledgement are great for human growth and development.
+
+## Research Question
+When it comes to MBTI, what is the possible connection between Mental Disorders and the 16 MBTI types?
+
+## Background and Prior Work
+Jungian Theory and Myers-Briggs Typology Indicator
+
+When it comes to MBTI, they are considered to be the most known forms of typology. BIG 5 or OCEAN is also considered to be noteworthy and incredibly useful. However, it does not seem to be as popular as the prior two considered. I'd like to preface this by explaining exactly what MBTI is and how it differs from the original Jungian functions.
+
+Carl Jung created 8 Cognitive Functions: Extraverted/Introverted Intuition, Sensing, Feelings and Thinking (Ne,Ni,Se,Si,Fe,Fi,Te,Ti). Years later, Myers and Briggs took his knowledge and ideas and created 16 personalities from the original idea. This was later known as MBTI types. MBTI types being made up of 8 phrases: Extravert/Introvert, Sensing/Intuition, Feeling/Thinking, and Judging/Perceiving. The 8 letters became 4 choices, and you are labeled into one of 16 boxes made up of the different letter scheme.
+
+According to TheMyersBriggs.com, The Myers-Briggs Type Indicator® (MBTI®) assessment is one of the world’s most popular personality tools—because it works. Used by more than 88 percent of Fortune 500 companies in 115 countries, and available in 29 languages, it has become the go-to framework for people development globally. With more than 70 years of science-based, research-based insight, the MBTI assessment is a robust tool for self-awareness and improvement. It provides positive language for understanding and valuing individual differences. With practical insight that’s easy to understand and implement, the MBTI assessment has helped thousands of organizations and millions of people around the world improve how they communicate, learn, and work1.
+
+Several other studies have looked further into the idea of patients with several mental health disorders and their correspondent typology type. One study in specifics looked further into patients with suicidal tendencies and thoughts2. In addition, there has been more reasearch into specific mental health disorders and the connection to different letters in MBTI3.
+
+Although there are many hypotheses and assumptions in regards to typology and mental health disorders, there is no clear evidentiary support. While many psychologists, including Carl Jung himself, state that there are no strong connection between the two, it is something that could be considered useful to look further into4
+
+1 The Myers Briggs Website
+2 Relationship of Myers Briggs type indicator personality characteristics to suicidality in affective disorder patients
+3 MBTI Personality Profiles in Unipolar Depressed Patients
+4 The Dark Side of the MBTI
+
+
+## Hypothesis
+Our hypothesis is that Mental Health and Typology have some slight connection and causation. By that we ask if there is a correlation between Mental Health disorders and Typology types such as MBTI. We acknowledge that there may be some confounding variable such as Socioeconomic Status, Education, and Physical Health Status. There is also the reality that there is no strong connection between Psuedosciences and a lack of knowledge and evidentiary support.
+
+## Dataset(s) Used
+### Main Datasets
+
+Mental Health
+Name: mental-illnesses-prevalence.csv
+Link to the Dataset
+Description: Mental health is an essential part of people’s lives and society. Poor mental health affects our well-being, our ability to work, and our relationships with friends, family, and community.
+Mental Health Dataset
+Name: mental-and-substance-use-as-share-of-disease.csv
+Link to the Dataset
+Description: Mental health includes our emotional, psychological, and social well-being. It affects how we think, feel, and act. It also helps determine how we handle stress, relate to others, and make healthy choices. 1. Mental health is important at every stage of life, from childhood and adolescence through adulthood.
+MBTI-TYPES Data
+Name: countries.csv | types.csv
+Link to the Dataset
+Description: Includes world stats, infos about each type and more crazy stuff...
+
+## Setup:
+```{r}
+# First let's grab the required and necessary Libraries!
+
+library(rmarkdown)
+library(tidyverse)
+library(questionr)
+library(ggplot2)
+library(reshape2)
+library(scales)
+library(car)
+library(broom)
+library(tidyr)
+library(effects)
+library(logistf)
+library(MASS)
+library(ResourceSelection)
+library(pROC)
+library(readr)
+library(ggmap)
+library(dplyr)  
+library(sf)
+library(scales)
+library(tmap)
+
+```
+
+## Data Cleaning
+### Table of Contents
+- Countries Databases for Illustration and Correlations
+- MBTI Personality Databases
+- Mental Health and Disorders Databases
+Combining Data: The datasets we have chosen will be combined and subsequently analyzed to give a measure of the overall relationship between MBTI and Mental Health. From there we want to look further into each Country around the world and the analysis that will follow from there.
+
+## MBTI Personality Databases
+### I. MBTI Types by Country
+First we will focus on the MBTI Types by each Country around the globe. We will compile the datasets from MBTI-Types Data and others to see which of the 16 types is most prevalent in each individual Country.
+
+```{r}
+#importing data
+mbti_df <- read_csv("datasets/Personality-Databases/countries.csv")
+head(df, 4)
+```
+
+```{r}
+#combine columns to sum up MBTI -A and -T (since I don't believe there's a significant difference)
+
+mbti_types <- c("INTJ", "INFJ", "INFP", "INTP", "ISTJ", "ISFJ", "ISFP", "ISTP",
+                "ENTJ", "ENFJ", "ENFP", "ENTP", "ESTJ", "ESFJ", "ESFP", "ESTP")
+
+for (type in mbti_types) {
+  col_A <- paste0(type, "-A")
+  col_T <- paste0(type, "-T")
+  
+  # Create the new combined column by summing them
+  mbti_df[[type]] <- mbti_df[[col_A]] + mbti_df[[col_T]]
+}
+
+cols_to_drop <- c(paste0(mbti_types, "-A"), paste0(mbti_types, "-T"))
+mbti_df <- subset(mbti_df, select = -which(names(mbti_df) %in% cols_to_drop))
+write.csv(mbti_df, "datasets/Personality-Databases/mbti_combined.csv", row.names = FALSE)
+
+head(mbti_df,4)
+```
+
+## Mental Disorders Databases
+### I. Mental Disorders by Country
+Next we will focus on the percentages of Mental Disorder Prevalence by each Country around the globe. We will compile the datasets from Mental Health Data and others to see which of the different disorders chosen are most prevalent in each individual Country.
+
+```{r}
+#importing data
+df_mental <- read.csv('datasets/MentalHealth-2023/mental-illnesses-prevalence.csv')
+head(df_mental, 4)
+```
+
+```{r}
+# rename columns
+names(df_mental) <- c("ADMIN", "ADM0_A3", "Year", "Schizophrenia", "Depression", "Anxiety", "Bipolar", "Eating Disorders")
+
+country_averages <- df_mental %>%
+  group_by(ADMIN, ADM0_A3) %>%
+  summarise(
+    Schizophrenia    = mean(Schizophrenia, na.rm = TRUE),
+    Depression       = mean(Depression, na.rm = TRUE),
+    Anxiety          = mean(Anxiety, na.rm = TRUE),
+    Bipolar          = mean(Bipolar, na.rm = TRUE),
+    Eating_Disorders = mean(`Eating Disorders`, na.rm = TRUE), # Backticks handle spaces
+    .groups = "drop"
+  )
+
+head(df_mental, 4)
+```
+
+```{r}
+# shapefile setup
+map_boundaries <- st_read("shapefiles/ne_110m_admin_0_countries/ne_110m_admin_0_countries.shp")
+merged_data <- left_join(map_boundaries, df_mental, by = "ADM0_A3")
+
+head(merged_data, 4)
+```
+
+```{r}
+tmap_mode("plot")
+
+tm_shape(merged_data) +
+  tm_polygons(
+    col = "Schizophrenia", 
+    title = "Schizophrenia Counts", 
+    palette = "Blues",
+    style = "quantile" 
+  ) +
+  tm_layout(title = "Schizophrenia Counts", frame = FALSE)
+
+```
+
